@@ -39,6 +39,7 @@ private fun SecureRandom.nextIntInclusive(min: Int, max: Int): Int {
     return (min.toLong() + nextLongBounded(range)).toInt()
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RandomGeneratorScreen() {
     var minText by remember { mutableStateOf("1") }
