@@ -8,6 +8,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
@@ -20,6 +23,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.font.FontWeight
 import java.security.SecureRandom
 
 class MainActivity : ComponentActivity() {
@@ -125,10 +129,7 @@ private val randomTools = listOf(
 fun RandomizerApp() {
     var tool by remember { mutableStateOf<RandomTool?>(null) }
     if (tool?.kind == "number") {
-        Column {
-            TextButton(onClick = { tool = null }) { Text("‹ MENÚ") }
-            RandomGeneratorScreen()
-        }
+        Column { TextButton(onClick = { tool = null }) { Text("‹ MENÚ") }; RandomGeneratorScreen() }
     } else if (tool != null) {
         when (tool!!.kind) {
             "dice" -> CatDiceScreen { tool = null }
@@ -137,23 +138,37 @@ fun RandomizerApp() {
             else -> RandomSimpleScreen(tool!!) { tool = null }
         }
     } else {
-        Scaffold { p ->
-            LazyColumn(
-                modifier = Modifier.padding(p).padding(18.dp).fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                item {
-                    Text("Randomizer", fontSize = 36.sp)
-                    Text("Rápido, justo y divertido")
-                    Text("v0.2.0", style = MaterialTheme.typography.labelMedium)
-                    Spacer(Modifier.height(8.dp))
+        CatHomeScreen { tool = it }
+    }
+}
+
+@Composable
+fun CatHomeScreen(open: (RandomTool) -> Unit) {
+    Scaffold(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)) { p ->
+        Column(Modifier.padding(p).padding(horizontal = 16.dp).fillMaxSize()) {
+            Row(Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Randomizer", fontSize = 34.sp, fontWeight = FontWeight.Bold)
+                    Text("Rápido, justo y gatunamente divertido 😸", style = MaterialTheme.typography.bodyMedium)
+                    Text("v0.2.1-dev · CAT UI", style = MaterialTheme.typography.labelMedium)
                 }
-                items(randomTools) { t ->
-                    ElevatedCard(onClick = { tool = t }, modifier = Modifier.fillMaxWidth()) {
-                        Row(Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text(t.emoji, fontSize = 34.sp)
-                            Spacer(Modifier.width(16.dp))
-                            Text(t.name, fontSize = 21.sp)
+                Text("🐱", fontSize = 54.sp)
+            }
+            Text("🐾  🧶  Elige un juego  🧶  🐾", modifier = Modifier.padding(vertical = 12.dp))
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(bottom = 20.dp)
+            ) {
+                gridItems(randomTools) { t ->
+                    ElevatedCard(onClick = { open(t) }, modifier = Modifier.height(142.dp)) {
+                        Column(Modifier.padding(14.dp).fillMaxSize(), verticalArrangement = Arrangement.SpaceBetween) {
+                            Text(catIcon(t.kind), fontSize = 38.sp)
+                            Column {
+                                Text(t.name, fontWeight = FontWeight.Bold, fontSize = 17.sp)
+                                Text(catSubtitle(t.kind), style = MaterialTheme.typography.bodySmall)
+                            }
                         }
                     }
                 }
@@ -162,6 +177,21 @@ fun RandomizerApp() {
     }
 }
 
+private fun catIcon(kind: String) = when(kind) {
+    "dice" -> "🐱🎲"; "list" -> "🐱🎡"; "coin" -> "🐱🪙"; "yesno" -> "🐾❓"
+    "rps" -> "😼✊"; "color" -> "🐱🎨"; "bottle" -> "🐈🍾"; "teams" -> "🐱🧶"; else -> "🐱🔢"
+}
+private fun catSubtitle(kind: String) = when(kind) {
+    "dice" -> "El gato lanza hasta 20 dados"
+    "list" -> "Gira la ruleta con tu minino"
+    "coin" -> "Atrapa cara o cruz"
+    "yesno" -> "Decisión felina instantánea"
+    "rps" -> "Desafía al gato"
+    "color" -> "Pinta con sus patitas"
+    "bottle" -> "Persigue la botella"
+    "teams" -> "Reparte ovillos y equipos"
+    else -> "Números con suerte gatuna"
+}
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RandomSimpleScreen(tool: RandomTool, back: () -> Unit) {
