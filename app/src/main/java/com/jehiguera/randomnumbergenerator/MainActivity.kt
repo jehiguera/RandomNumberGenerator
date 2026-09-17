@@ -3,7 +3,10 @@ package com.jehiguera.randomnumbergenerator
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
@@ -11,6 +14,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.KeyboardType
@@ -113,7 +117,8 @@ private val randomTools = listOf(
     RandomTool("🎡", "Ruleta / Lista", "list"),
     RandomTool("✊", "Piedra, papel o tijera", "rps"),
     RandomTool("🎨", "Color al azar", "color"),
-    RandomTool("🍾", "Girar botella", "bottle")
+    RandomTool("🍾", "Girar botella", "bottle"),
+    RandomTool("🐾", "Equipos al azar", "teams")
 )
 
 @Composable
@@ -125,7 +130,12 @@ fun RandomizerApp() {
             RandomGeneratorScreen()
         }
     } else if (tool != null) {
-        RandomSimpleScreen(tool!!) { tool = null }
+        when (tool!!.kind) {
+            "dice" -> CatDiceScreen { tool = null }
+            "list" -> CatRouletteScreen { tool = null }
+            "teams" -> CatTeamsScreen { tool = null }
+            else -> RandomSimpleScreen(tool!!) { tool = null }
+        }
     } else {
         Scaffold { p ->
             LazyColumn(
@@ -193,6 +203,74 @@ fun RandomSimpleScreen(tool: RandomTool, back: () -> Unit) {
             }, modifier = Modifier.fillMaxWidth()) {
                 Text(if (tool.kind == "list") "GIRAR / ELEGIR" else "GENERAR")
             }
+        }
+    }
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CatDiceScreen(back: () -> Unit) {
+    var count by remember { mutableIntStateOf(2) }
+    var dice by remember { mutableStateOf(listOf(1, 1)) }
+    var turns by remember { mutableFloatStateOf(0f) }
+    val rotation by animateFloatAsState(turns, tween(650), label = "dice")
+    val rng = remember { SecureRandom() }
+    Scaffold(topBar = { TopAppBar(title={Text("🐱 Dados juguetones")}, navigationIcon={TextButton(onClick=back){Text("‹ MENÚ")}}) }) { p ->
+        Column(Modifier.padding(p).padding(20.dp).fillMaxSize(), horizontalAlignment=Alignment.CenterHorizontally, verticalArrangement=Arrangement.spacedBy(18.dp)) {
+            Text("🐱  🧶  🐾", fontSize=38.sp)
+            Text("¿Cuántos dados?", style=MaterialTheme.typography.titleLarge)
+            Row(verticalAlignment=Alignment.CenterVertically) {
+                Button(onClick={ if(count>1) count-- }) { Text("−") }
+                Text("  " + count + "  ", fontSize=30.sp)
+                Button(onClick={ if(count<20) count++ }) { Text("+") }
+            }
+            Text(dice.joinToString("  ") { dieFace(it) }, fontSize=48.sp, modifier=Modifier.rotate(rotation))
+            Text("Total: " + dice.sum(), fontSize=28.sp)
+            Button(onClick={ dice=List(count){rng.nextInt(6)+1}; turns += 360f }, modifier=Modifier.fillMaxWidth()) { Text("🎲 ¡LANZAR! 🐾") }
+            Text("El gatito promete no empujar los dados de la mesa 😸")
+        }
+    }
+}
+private fun dieFace(n:Int)=listOf("⚀","⚁","⚂","⚃","⚄","⚅")[n-1]
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CatRouletteScreen(back: () -> Unit) {
+    var options by remember { mutableStateOf("Pizza\nPeli\nPaseo\nLeer\nVideojuego\nCocinar") }
+    var result by remember { mutableStateOf("🐾") }
+    var angle by remember { mutableFloatStateOf(0f) }
+    val animated by animateFloatAsState(angle, tween(1500, easing=FastOutSlowInEasing), label="roulette")
+    val rng=remember { SecureRandom() }
+    Scaffold(topBar={TopAppBar(title={Text("🐱 Ruleta")},navigationIcon={TextButton(onClick=back){Text("‹ MENÚ")}})}) { p ->
+        Column(Modifier.padding(p).padding(20.dp).fillMaxSize(), horizontalAlignment=Alignment.CenterHorizontally, verticalArrangement=Arrangement.spacedBy(14.dp)) {
+            Text("🐱", fontSize=58.sp)
+            Box(Modifier.size(190.dp).rotate(animated).background(MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(95.dp)), contentAlignment=Alignment.Center) { Text("🎡\n🧶  🐾  🧶", fontSize=32.sp) }
+            OutlinedTextField(options,{options=it},label={Text("Opciones · una por línea")},modifier=Modifier.fillMaxWidth().height(150.dp))
+            Button(onClick={ val list=options.lines().filter{it.isNotBlank()}; if(list.isNotEmpty()){ result=list[rng.nextInt(list.size)]; angle += 1080f+rng.nextInt(360) } },modifier=Modifier.fillMaxWidth()){Text("🎡 ¡GIRAR! 🐾")}
+            Text("Resultado: " + result,fontSize=26.sp)
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CatTeamsScreen(back: () -> Unit) {
+    var names by remember { mutableStateOf("Ana\nLuis\nMarta\nCarlos\nSofía\nPedro") }
+    var teams by remember { mutableIntStateOf(2) }
+    var result by remember { mutableStateOf("") }
+    val rng=remember { SecureRandom() }
+    Scaffold(topBar={TopAppBar(title={Text("🐱 Equipos al azar")},navigationIcon={TextButton(onClick=back){Text("‹ MENÚ")}})}) { p ->
+        Column(Modifier.padding(p).padding(20.dp).fillMaxSize(),verticalArrangement=Arrangement.spacedBy(12.dp)){
+            Text("🐱🐱  Gatitos capitanes buscan equipo  🧶",fontSize=20.sp)
+            OutlinedTextField(names,{names=it},label={Text("Participantes · uno por línea")},modifier=Modifier.fillMaxWidth().height(170.dp))
+            Row(verticalAlignment=Alignment.CenterVertically){Text("Equipos: ",fontSize=20.sp); Button(onClick={if(teams>2)teams--}){Text("−")}; Text("  " + teams + "  ",fontSize=24.sp); Button(onClick={if(teams<10)teams++}){Text("+")}}
+            Button(onClick={
+                val pool=names.lines().filter{it.isNotBlank()}.toMutableList()
+                for(i in pool.lastIndex downTo 1){val j=rng.nextInt(i+1); val x=pool[i];pool[i]=pool[j];pool[j]=x}
+                result=(0 until teams).joinToString("\n\n"){t->"🐾 Equipo "+(t+1)+": "+pool.filterIndexed{i,_->i%teams==t}.joinToString(", ")}
+            },modifier=Modifier.fillMaxWidth()){Text("🐾 CREAR EQUIPOS")}
+            Text(result,fontSize=19.sp)
         }
     }
 }
