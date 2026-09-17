@@ -75,12 +75,12 @@ fun RandomGeneratorScreen() {
         result = values.joinToString("  ·  ")
     }
 
-    Scaffold(topBar = { TopAppBar(title = { Text("Random Number Generator") }) }) { padding ->
+    Scaffold(topBar = { TopAppBar(title = { Text("Randomizer") }) }) { padding ->
         Column(
             modifier = Modifier.padding(padding).padding(20.dp).fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text("v0.1.0", style = MaterialTheme.typography.labelMedium)
+            Text("v0.2.0", style = MaterialTheme.typography.labelMedium)
             OutlinedTextField(minText, { minText = it }, label = { Text("Mínimo") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth())
             OutlinedTextField(maxText, { maxText = it }, label = { Text("Máximo") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth())
             OutlinedTextField(countText, { countText = it }, label = { Text("Cantidad") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth())
