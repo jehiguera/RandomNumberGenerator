@@ -4,6 +4,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -19,7 +21,7 @@ import java.security.SecureRandom
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { MaterialTheme { RandomGeneratorScreen() } }
+        setContent { MaterialTheme { RandomizerApp() } }
     }
 }
 
@@ -96,6 +98,100 @@ fun RandomGeneratorScreen() {
                 Text("Resultado", style = MaterialTheme.typography.titleMedium)
                 Text(result, fontSize = 28.sp)
                 OutlinedButton(onClick = { clipboard.setText(AnnotatedString(result)) }, modifier = Modifier.fillMaxWidth()) { Text("COPIAR") }
+            }
+        }
+    }
+}
+
+data class RandomTool(val emoji: String, val name: String, val kind: String)
+
+private val randomTools = listOf(
+    RandomTool("🔢", "Número al azar", "number"),
+    RandomTool("🎲", "Dados", "dice"),
+    RandomTool("🪙", "Moneda", "coin"),
+    RandomTool("✅", "Sí o No", "yesno"),
+    RandomTool("🎡", "Ruleta / Lista", "list"),
+    RandomTool("✊", "Piedra, papel o tijera", "rps"),
+    RandomTool("🎨", "Color al azar", "color"),
+    RandomTool("🍾", "Girar botella", "bottle")
+)
+
+@Composable
+fun RandomizerApp() {
+    var tool by remember { mutableStateOf<RandomTool?>(null) }
+    if (tool?.kind == "number") {
+        Column {
+            TextButton(onClick = { tool = null }) { Text("‹ MENÚ") }
+            RandomGeneratorScreen()
+        }
+    } else if (tool != null) {
+        RandomSimpleScreen(tool!!) { tool = null }
+    } else {
+        Scaffold { p ->
+            LazyColumn(
+                modifier = Modifier.padding(p).padding(18.dp).fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                item {
+                    Text("Randomizer", fontSize = 36.sp)
+                    Text("Rápido, justo y divertido")
+                    Text("v0.2.0", style = MaterialTheme.typography.labelMedium)
+                    Spacer(Modifier.height(8.dp))
+                }
+                items(randomTools) { t ->
+                    ElevatedCard(onClick = { tool = t }, modifier = Modifier.fillMaxWidth()) {
+                        Row(Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text(t.emoji, fontSize = 34.sp)
+                            Spacer(Modifier.width(16.dp))
+                            Text(t.name, fontSize = 21.sp)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun RandomSimpleScreen(tool: RandomTool, back: () -> Unit) {
+    var result by remember { mutableStateOf("—") }
+    var options by remember { mutableStateOf("Ana\nLuis\nMarta\nCarlos") }
+    val secure = remember { SecureRandom() }
+    Scaffold(topBar = {
+        TopAppBar(title = { Text(tool.name) }, navigationIcon = {
+            TextButton(onClick = back) { Text("‹ MENÚ") }
+        })
+    }) { p ->
+        Column(
+            Modifier.padding(p).padding(20.dp).fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(18.dp)
+        ) {
+            if (tool.kind == "list") {
+                OutlinedTextField(
+                    value = options,
+                    onValueChange = { options = it },
+                    label = { Text("Una opción por línea") },
+                    modifier = Modifier.fillMaxWidth().height(180.dp)
+                )
+            }
+            Text(result, fontSize = 40.sp)
+            Button(onClick = {
+                result = when (tool.kind) {
+                    "dice" -> "🎲 " + (secure.nextInt(6) + 1)
+                    "coin" -> if (secure.nextBoolean()) "CARA" else "CRUZ"
+                    "yesno" -> if (secure.nextBoolean()) "SÍ" else "NO"
+                    "rps" -> listOf("PIEDRA ✊", "PAPEL ✋", "TIJERA ✌️")[secure.nextInt(3)]
+                    "color" -> "#%06X".format(secure.nextInt(0x1000000))
+                    "bottle" -> "Dirección: " + secure.nextInt(360) + "°"
+                    "list" -> {
+                        val list = options.lines().filter { it.isNotBlank() }
+                        if (list.isEmpty()) "Añade opciones" else list[secure.nextInt(list.size)]
+                    }
+                    else -> "—"
+                }
+            }, modifier = Modifier.fillMaxWidth()) {
+                Text(if (tool.kind == "list") "GIRAR / ELEGIR" else "GENERAR")
             }
         }
     }
