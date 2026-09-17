@@ -23,6 +23,22 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+private fun SecureRandom.nextLongBounded(bound: Long): Long {
+    require(bound > 0)
+    var bits: Long
+    var value: Long
+    do {
+        bits = nextLong().ushr(1)
+        value = bits % bound
+    } while (bits - value + (bound - 1) < 0L)
+    return value
+}
+
+private fun SecureRandom.nextIntInclusive(min: Int, max: Int): Int {
+    val range = max.toLong() - min.toLong() + 1L
+    return (min.toLong() + nextLongBounded(range)).toInt()
+}
+
 @Composable
 fun RandomGeneratorScreen() {
     var minText by remember { mutableStateOf("1") }
@@ -42,17 +58,18 @@ fun RandomGeneratorScreen() {
             min == null || max == null || count == null -> "Introduce valores numéricos válidos."
             min > max -> "El mínimo no puede ser mayor que el máximo."
             count < 1 -> "La cantidad debe ser al menos 1."
-            unique && count > (max.toLong() - min.toLong() + 1L) -> "No hay suficientes números distintos en ese rango."
+            count > 10000 -> "La cantidad máxima en esta versión es 10000."
+            unique && count.toLong() > (max.toLong() - min.toLong() + 1L) -> "No hay suficientes números distintos en ese rango."
             else -> null
         }
         if (error != null) return
 
         val values = if (unique) {
             val set = linkedSetOf<Int>()
-            while (set.size < count!!) set += rng.nextInt(max!! - min!! + 1) + min
+            while (set.size < count!!) set += rng.nextIntInclusive(min!!, max!!)
             set.toList()
         } else {
-            List(count!!) { rng.nextInt(max!! - min!! + 1) + min }
+            List(count!!) { rng.nextIntInclusive(min!!, max!!) }
         }
         result = values.joinToString("  ·  ")
     }
