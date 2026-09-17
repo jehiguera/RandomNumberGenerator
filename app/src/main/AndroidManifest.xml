@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
-        android:theme="@style/Theme.RandomNumberGenerator"\n        android:icon="@drawable/ic_cat_launcher"\n        android:roundIcon="@drawable/ic_cat_launcher"
+        android:theme="@style/Theme.RandomNumberGenerator"
+        android:icon="@drawable/ic_cat_launcher"
+        android:roundIcon="@drawable/ic_cat_launcher"
         android:label="Randomizer">
         <activity
             android:name=".MainActivity"
